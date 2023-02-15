@@ -47,3 +47,20 @@ class PostDetailViewTests(APITestCase):
     def test_can_retrieve_post_using_invalid_id(self):
         response = self.client.get('/post/999/')
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
+    def test_user_can_update_own_post(self):
+        self.client.login(username='adam', password='pass')
+        response = self.client.put('/posts/1/', {'title': 'a new title'})
+        post = Post.objects.filter(pk=1).first()
+        self.assertEqual(post.title, 'a new title')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+    
+    def test_user_can_not_update_other_users_posts(self):
+        self.client.login(username='brian', password='pass')
+        response = self.client.put('/posts/1/', {'title': 'newest title'})
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+    
+    def test_user_cant_update_another_users_posts(self):
+        self.client.login(username='adam', password='pass')
+        response = self.client.put('/posts/2/', {'title': 'a new title'})
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
